@@ -1,0 +1,74 @@
+/* react-easy-crop 기본 스타일 */
+.reactEasyCrop_Container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  cursor: move;
+}
+
+.reactEasyCrop_Image {
+  max-width: unset !important;
+  max-height: unset !important;
+  will-change: transform;
+}
+
+.reactEasyCrop_CropArea {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(79, 125, 255, 0.8);
+  box-shadow: 0 0 0 9999em rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.reactEasyCrop_CropAreaGrid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.reactEasyCrop_CropAreaGrid::before {
+  content: ' ';
+  position: absolute;
+  top: 33.3333%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.reactEasyCrop_CropAreaGrid::after {
+  content: ' ';
+  position: absolute;
+  top: 66.6666%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.reactEasyCrop_CropAreaGrid span:first-child {
+  position: absolute;
+  top: 0;
+  left: 33.3333%;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.reactEasyCrop_CropAreaGrid span:nth-child(2) {
+  position: absolute;
+  top: 0;
+  left: 66.6666%;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+
