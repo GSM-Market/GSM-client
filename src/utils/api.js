@@ -4,12 +4,20 @@ import axios from 'axios';
 const getApiBaseUrl = () => {
   // 환경 변수가 설정되어 있으면 우선 사용
   if (import.meta.env.VITE_API_BASE_URL) {
-    console.log('🔧 Using VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-    return import.meta.env.VITE_API_BASE_URL;
+    const envUrl = import.meta.env.VITE_API_BASE_URL.trim();
+    // 상대 경로인 경우 그대로 사용 (nginx 프록시)
+    if (envUrl.startsWith('/')) {
+      console.log('🔧 Using VITE_API_BASE_URL (relative):', envUrl);
+      return envUrl;
+    }
+    // 절대 경로인 경우 사용 (직접 백엔드 접속)
+    console.log('🔧 Using VITE_API_BASE_URL (absolute):', envUrl);
+    return envUrl;
   }
   
   // 프로덕션 환경에서는 상대 경로 사용 (프론트엔드와 백엔드가 같은 서버에서 서빙)
   if (import.meta.env.PROD) {
+    console.log('📦 Production mode, using relative path: /api');
     return '/api';
   }
   
@@ -43,14 +51,19 @@ const api = axios.create({
 // 요청 인터셉터: baseURL 업데이트 및 토큰 추가
 api.interceptors.request.use(
   (config) => {
-    // 매 요청마다 올바른 baseURL 확인
-    const currentHostname = window.location.hostname;
-    if (currentHostname !== 'localhost' && currentHostname !== '127.0.0.1') {
-      // 다른 기기에서 접속 시 직접 백엔드 IP 사용
-      config.baseURL = `http://${currentHostname}:3000/api`;
-    } else if (!import.meta.env.VITE_API_BASE_URL) {
-      // localhost인 경우 프록시 사용
-      config.baseURL = '/api';
+    // 환경 변수가 상대 경로로 설정되어 있으면 그대로 사용
+    if (import.meta.env.VITE_API_BASE_URL?.startsWith('/')) {
+      config.baseURL = import.meta.env.VITE_API_BASE_URL;
+    } else {
+      // 매 요청마다 올바른 baseURL 확인
+      const currentHostname = window.location.hostname;
+      if (currentHostname !== 'localhost' && currentHostname !== '127.0.0.1') {
+        // 다른 기기에서 접속 시 직접 백엔드 IP 사용
+        config.baseURL = `http://${currentHostname}:3000/api`;
+      } else if (!import.meta.env.VITE_API_BASE_URL) {
+        // localhost인 경우 프록시 사용
+        config.baseURL = '/api';
+      }
     }
     
     const token = localStorage.getItem('token');

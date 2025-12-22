@@ -41,25 +41,27 @@ const Login = ({ onLogin }) => {
       const data = await authService.login(fullEmail, formData.password);
       console.log('✅ 로그인 성공:', data);
       
-      // 성공 시에만 상태 초기화 및 페이지 이동
-      setError('');
-      setLoading(false);
-      
       // 사용자 데이터 저장
       if (!data.user || !data.token) {
         throw new Error('로그인 응답 데이터가 올바르지 않습니다.');
       }
       
       console.log('💾 사용자 데이터 저장:', data.user);
+      
+      // 상태 초기화
+      setError('');
+      setLoading(false);
+      
+      // 사용자 데이터 저장 및 상태 업데이트
       onLogin(data.user, data.token);
       
-      // 상태 업데이트를 기다린 후 네비게이션
+      // Toast 표시
       showToast('로그인되었습니다!', 'success');
       
-      // 약간의 지연을 두고 네비게이션 (상태 업데이트 대기)
-      requestAnimationFrame(() => {
+      // 상태 업데이트 후 네비게이션 (약간의 지연)
+      setTimeout(() => {
         navigate('/', { replace: true });
-      });
+      }, 100);
     } catch (err) {
       // 실패 시 로딩만 해제하고 에러 상태는 유지
       setLoading(false);

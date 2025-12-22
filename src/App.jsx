@@ -61,9 +61,13 @@ function App() {
   }, []);
 
   const handleLogin = (userData, token) => {
+    console.log('🔐 handleLogin 호출:', { userData, hasToken: !!token });
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    // 커스텀 이벤트 발생하여 다른 컴포넌트도 업데이트
+    window.dispatchEvent(new Event('authChange'));
+    console.log('✅ 사용자 상태 업데이트 완료');
   };
 
   const handleLogout = () => {
