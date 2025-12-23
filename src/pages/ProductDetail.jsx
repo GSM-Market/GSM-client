@@ -6,6 +6,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ReportDialog from '../components/ReportDialog';
 import { useToast } from '../components/ui/Toast';
 import Skeleton from '../components/ui/Skeleton';
 import { getImageUrl } from '../utils/config';
@@ -18,6 +19,7 @@ const ProductDetail = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   useEffect(() => {
     loadProduct();
@@ -244,7 +246,7 @@ const ProductDetail = ({ user }) => {
                 )}
               </div>
             ) : (
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t space-y-2">
                 <Button
                   variant="primary"
                   size="lg"
@@ -256,6 +258,19 @@ const ProductDetail = ({ user }) => {
                   </svg>
                   채팅하기
                 </Button>
+                {user && (
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => setShowReportDialog(true)}
+                    className="w-full"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    신고하기
+                  </Button>
+                )}
               </div>
             )}
 
@@ -278,6 +293,15 @@ const ProductDetail = ({ user }) => {
         message="삭제된 상품은 복구할 수 없습니다."
         confirmLabel={deleting ? '삭제 중...' : '삭제'}
         variant="danger"
+      />
+
+      {/* 신고 다이얼로그 */}
+      <ReportDialog
+        isOpen={showReportDialog}
+        onClose={() => setShowReportDialog(false)}
+        reportType="PRODUCT"
+        targetId={product?.id}
+        targetInfo={product}
       />
     </div>
   );

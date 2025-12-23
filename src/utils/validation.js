@@ -23,9 +23,28 @@ export const validatePassword = (password) => {
   if (!password) {
     return '비밀번호를 입력해주세요.';
   }
-  if (password.length < 6) {
-    return '비밀번호는 6자 이상이어야 합니다.';
+  if (password.length < 8) {
+    return '비밀번호는 8자 이상이어야 합니다.';
   }
+  
+  // 숫자 포함 확인
+  const hasNumber = /\d/.test(password);
+  if (!hasNumber) {
+    return '비밀번호에 숫자를 포함해주세요.';
+  }
+  
+  // 문자 포함 확인 (영문 대소문자)
+  const hasLetter = /[a-zA-Z]/.test(password);
+  if (!hasLetter) {
+    return '비밀번호에 영문자를 포함해주세요.';
+  }
+  
+  // 특수문자 포함 확인
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  if (!hasSpecialChar) {
+    return '비밀번호에 특수문자를 포함해주세요.';
+  }
+  
   return null;
 };
 

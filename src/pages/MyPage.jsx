@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import userService from '../services/userService';
 import { useToast } from '../components/ui/Toast';
@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import Skeleton from '../components/ui/Skeleton';
+import { getImageUrl } from '../utils/config';
 
 const MyPage = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ const MyPage = ({ onLogout }) => {
   const [deleting, setDeleting] = useState(false);
   const [editingNickname, setEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -117,6 +120,44 @@ const MyPage = ({ onLogout }) => {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 타입 검증
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast('jpg, jpeg, png, webp 파일만 업로드 가능합니다.', 'error');
+      return;
+    }
+
+    // 파일 크기 검증 (2~5MB)
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB < 0.1 || fileSizeMB > 5) {
+      showToast('파일 크기는 0.1MB 이상 5MB 이하여야 합니다.', 'error');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const data = await userService.uploadAvatar(file);
+      setUserInfo(data.user);
+      // localStorage의 user 정보도 업데이트
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      storedUser.avatar_url = data.avatar_url;
+      localStorage.setItem('user', JSON.stringify(storedUser));
+      showToast('프로필 사진이 업로드되었습니다.', 'success');
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || '프로필 사진 업로드에 실패했습니다.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-container mx-auto px-4 py-8">
@@ -155,10 +196,44 @@ const MyPage = ({ onLogout }) => {
         {/* 프로필 카드 */}
         <Card className="p-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-            <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-2xl font-bold">
-                {getInitials(userInfo.nickname)}
-              </span>
+            <div className="relative flex-shrink-0">
+              {userInfo.avatar_url ? (
+                <img
+                  src={getImageUrl(userInfo.avatar_url)}
+                  alt={userInfo.nickname}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-primary-200"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">
+                    {getInitials(userInfo.nickname)}
+                  </span>
+                </div>
+              )}
+              <label
+                htmlFor="avatar-upload"
+                className="absolute bottom-0 right-0 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-600 transition shadow-md"
+                title="프로필 사진 변경"
+              >
+                <input
+                  id="avatar-upload"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </label>
+              {uploadingAvatar && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
             </div>
             <div className="flex-1 text-center sm:text-left w-full">
               {editingNickname ? (
@@ -249,7 +324,7 @@ const MyPage = ({ onLogout }) => {
         {!userInfo.is_admin && (
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">빠른 액션</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link to="/products/create">
                 <Button variant="primary" size="md" className="w-full">
                   상품 등록하기
@@ -258,6 +333,11 @@ const MyPage = ({ onLogout }) => {
               <Link to="/my-products">
                 <Button variant="secondary" size="md" className="w-full">
                   내 상품 관리
+                </Button>
+              </Link>
+              <Link to="/favorites">
+                <Button variant="secondary" size="md" className="w-full">
+                  관심 목록
                 </Button>
               </Link>
             </div>

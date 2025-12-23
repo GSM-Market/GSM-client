@@ -10,16 +10,18 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import productService from '../services/productService';
 import userService from '../services/userService';
 import adminService from '../services/adminService';
+import reportService from '../services/reportService';
 
 const Admin = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const activeTab = searchParams.get('tab') || 'products'; // products, users
+  const activeTab = searchParams.get('tab') || 'products'; // products, users, reports
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalProducts: 0, totalUsers: 0, sellingProducts: 0, soldProducts: 0 });
+  const [stats, setStats] = useState({ totalProducts: 0, totalUsers: 0, sellingProducts: 0, soldProducts: 0, pendingReports: 0 });
   const [showDeleteProductConfirm, setShowDeleteProductConfirm] = useState(false);
   const [showDeleteUserConfirm, setShowDeleteUserConfirm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -49,15 +51,39 @@ const Admin = () => {
           sellingProducts: productsList.filter(p => p.status === 'SELLING').length,
           soldProducts: productsList.filter(p => p.status === 'SOLD').length
         }));
-      } else {
+      } else if (activeTab === 'users') {
         const data = await adminService.getAllUsers();
-        const usersList = data.users || [];
+        const usersList = (data.users || []).map(user => ({
+          ...user,
+          nickname: user.nickname ? user.nickname.replace(/\s*0+\s*$/, '').trim() : user.nickname
+        }));
         setUsers(usersList);
         // 통계 업데이트
         setStats(prev => ({
           ...prev,
           totalUsers: usersList.length
         }));
+      } else if (activeTab === 'reports') {
+        const data = await reportService.getAllReports();
+        const reportsList = data.reports || [];
+        setReports(reportsList);
+        // 통계 업데이트
+        setStats(prev => ({
+          ...prev,
+          pendingReports: reportsList.filter(r => r.status === 'PENDING').length
+        }));
+      }
+      
+      // 항상 신고 통계 업데이트 (다른 탭에서도 대기중 신고 수 표시)
+      try {
+        const reportsData = await reportService.getAllReports();
+        const allReports = reportsData.reports || [];
+        setStats(prev => ({
+          ...prev,
+          pendingReports: allReports.filter(r => r.status === 'PENDING').length
+        }));
+      } catch (err) {
+        console.error('Failed to load reports for stats:', err);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -107,7 +133,7 @@ const Admin = () => {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-1">전체 게시물</p>
@@ -126,23 +152,52 @@ const Admin = () => {
             <p className="text-2xl font-bold text-green-600">{stats.sellingProducts}</p>
           </div>
         </Card>
+        <Card className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">대기중 신고</p>
+            <p className="text-2xl font-bold text-red-600">{stats.pendingReports}</p>
+          </div>
+        </Card>
       </div>
 
       {/* 탭 메뉴 */}
-      {activeTab === 'products' && (
-        <div className="flex space-x-1 mb-6 border-b border-gray-200">
-          <div className="px-6 py-3 font-medium text-primary-600 bg-primary-50 border-b-2 border-primary-500">
-            게시물 관리
-          </div>
-        </div>
-      )}
-      {activeTab === 'users' && (
-        <div className="flex space-x-1 mb-6 border-b border-gray-200">
-          <div className="px-6 py-3 font-medium text-primary-600 bg-primary-50 border-b-2 border-primary-500">
-            사용자 관리
-          </div>
-        </div>
-      )}
+      <div className="flex space-x-1 mb-6 border-b border-gray-200">
+        <button
+          onClick={() => setSearchParams({ tab: 'products' })}
+          className={`px-6 py-3 font-medium transition ${
+            activeTab === 'products'
+              ? 'text-primary-600 bg-primary-50 border-b-2 border-primary-500'
+              : 'text-gray-600 hover:text-primary-600'
+          }`}
+        >
+          게시물 관리
+        </button>
+        <button
+          onClick={() => setSearchParams({ tab: 'users' })}
+          className={`px-6 py-3 font-medium transition ${
+            activeTab === 'users'
+              ? 'text-primary-600 bg-primary-50 border-b-2 border-primary-500'
+              : 'text-gray-600 hover:text-primary-600'
+          }`}
+        >
+          사용자 관리
+        </button>
+        <button
+          onClick={() => setSearchParams({ tab: 'reports' })}
+          className={`px-6 py-3 font-medium transition relative ${
+            activeTab === 'reports'
+              ? 'text-primary-600 bg-primary-50 border-b-2 border-primary-500'
+              : 'text-gray-600 hover:text-primary-600'
+          }`}
+        >
+          신고 관리
+          {stats.pendingReports > 0 && (
+            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {stats.pendingReports}
+            </span>
+          )}
+        </button>
+      </div>
 
       {loading ? (
         <div className="space-y-4">
@@ -198,7 +253,7 @@ const Admin = () => {
             ))
           )}
         </div>
-      ) : (
+      ) : activeTab === 'users' ? (
         <div className="space-y-4">
           {users.length === 0 ? (
             <Card className="p-12">
@@ -244,7 +299,117 @@ const Admin = () => {
             ))
           )}
         </div>
-      )}
+      ) : activeTab === 'reports' ? (
+        <div className="space-y-4">
+          {reports.length === 0 ? (
+            <Card className="p-12">
+              <EmptyState
+                title="신고 내역이 없습니다"
+                description="아직 접수된 신고가 없습니다."
+              />
+            </Card>
+          ) : (
+            reports.map((report) => (
+              <Card key={report.id} className="p-4 hover:shadow-md transition">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant={
+                        report.status === 'PENDING' ? 'warning' :
+                        report.status === 'RESOLVED' ? 'success' :
+                        report.status === 'REJECTED' ? 'secondary' : 'default'
+                      }>
+                        {report.status === 'PENDING' ? '대기중' :
+                         report.status === 'REVIEWED' ? '검토중' :
+                         report.status === 'RESOLVED' ? '처리완료' : '거부됨'}
+                      </Badge>
+                      <Badge variant="default">
+                        {report.report_type === 'PRODUCT' ? '상품' :
+                         report.report_type === 'USER' ? '사용자' : '메시지'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">신고 사유: {report.reason}</p>
+                    {report.description && (
+                      <p className="text-sm text-gray-600 mb-2">{report.description}</p>
+                    )}
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>신고자: {report.reporter_nickname} ({report.reporter_email})</p>
+                      <p>신고일: {new Date(report.created_at).toLocaleString('ko-KR')}</p>
+                      {report.reviewed_by && (
+                        <p>처리자: {report.reviewer_nickname} ({report.reviewer_email})</p>
+                      )}
+                      {report.report_type === 'PRODUCT' && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-xs mb-1">신고 대상:</p>
+                          <p className="text-xs">
+                            {report.product_title ? (
+                              <>상품: {report.product_title} {report.product_price && `(${Number(report.product_price).toLocaleString()}원)`}</>
+                            ) : (
+                              <>상품 ID: {report.target_id}</>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {report.report_type === 'USER' && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-xs mb-1">신고 대상:</p>
+                          <p className="text-xs">
+                            {report.target_user_nickname ? (
+                              <>사용자: {report.target_user_nickname} ({report.target_user_email})</>
+                            ) : (
+                              <>사용자 ID: {report.target_id}</>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {report.report_type === 'MESSAGE' && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded">
+                          <p className="font-medium text-xs mb-1">신고 대상:</p>
+                          <p className="text-xs">메시지 ID: {report.target_id}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {report.status === 'PENDING' && (
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await reportService.updateReportStatus(report.id, 'RESOLVED');
+                            showToast('신고가 처리되었습니다.', 'success');
+                            loadData();
+                          } catch (error) {
+                            showToast('신고 처리에 실패했습니다.', 'error');
+                          }
+                        }}
+                      >
+                        처리완료
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await reportService.updateReportStatus(report.id, 'REJECTED');
+                            showToast('신고가 거부되었습니다.', 'success');
+                            loadData();
+                          } catch (error) {
+                            showToast('신고 처리에 실패했습니다.', 'error');
+                          }
+                        }}
+                      >
+                        거부
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      ) : null}
 
       <ConfirmDialog
         isOpen={showDeleteProductConfirm}

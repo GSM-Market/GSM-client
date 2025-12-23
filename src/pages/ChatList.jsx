@@ -38,13 +38,11 @@ const ChatList = () => {
         socketRef.current = socket;
 
         const handleNewMessage = () => {
-          // 새 메시지가 오면 채팅방 목록 갱신
           console.log('📨 New message received, refreshing conversations');
           loadConversations();
         };
 
         const handleConversationUpdated = () => {
-          // 채팅방이 업데이트되면 목록 갱신
           console.log('🔄 Conversation updated, refreshing list');
           loadConversations();
         };
@@ -114,7 +112,7 @@ const ChatList = () => {
       }
       
       showToast('채팅방 목록을 불러오는데 실패했습니다.', 'error');
-      setConversations([]); // 에러 시 빈 배열로 설정
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -201,7 +199,7 @@ const ChatList = () => {
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate">
-                          {conv.other_user_student_number ? `${conv.other_user_student_number} ` : ''}{conv.other_user_nickname}
+                          {conv.other_user_student_number && conv.other_user_student_number !== '0' ? `${conv.other_user_student_number} ` : ''}{conv.other_user_nickname}
                         </h3>
                         <p className="text-sm text-gray-600 truncate">
                           {conv.product_title}
@@ -236,4 +234,3 @@ const ChatList = () => {
 };
 
 export default ChatList;
-

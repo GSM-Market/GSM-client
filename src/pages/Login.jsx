@@ -72,8 +72,8 @@ const Login = ({ onLogin }) => {
       // 에러 메시지 설정 (항상 설정하여 사라지지 않도록)
       setError(errorMsg);
       
-      // Toast는 표시하지 않음 (인라인 에러 메시지가 메인)
-      // 사용자가 명시적으로 닫을 때까지 에러 메시지 유지
+      // Toast도 표시 (에러 타입은 자동으로 사라지지 않음)
+      showToast(errorMsg, 'error');
     }
   };
 

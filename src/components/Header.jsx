@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import Badge from './ui/Badge';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
+import { getImageUrl } from '../utils/config';
 
 const Header = ({ user }) => {
   const location = useLocation();
@@ -25,12 +26,13 @@ const Header = ({ user }) => {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-soft">
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center group-hover:bg-primary-600 transition">
-              <span className="text-white font-bold text-lg">G</span>
-            </div>
-            <span className="text-xl font-bold text-primary-600">GSM Market</span>
+        <div className="flex justify-between items-center h-20 md:h-24">
+          <Link to="/" className="flex items-center group">
+            <img 
+              src="/logo.png" 
+              alt="GSM Market" 
+              className="h-40 md:h-48 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -60,28 +62,16 @@ const Header = ({ user }) => {
                   </Link>
                 )}
                 {user.is_admin ? (
-                  <>
-                    <Link
-                      to="/admin?tab=products"
-                      className={`px-4 py-2 rounded-button transition ${
-                        isActive('/admin') && (new URLSearchParams(window.location.search).get('tab') === 'products' || !new URLSearchParams(window.location.search).get('tab'))
-                          ? 'bg-danger-100 text-danger-700 font-medium'
-                          : 'text-danger-600 hover:text-danger-700 hover:bg-danger-50'
-                      }`}
-                    >
-                      게시물 관리
-                    </Link>
-                    <Link
-                      to="/admin?tab=users"
-                      className={`px-4 py-2 rounded-button transition ${
-                        isActive('/admin') && new URLSearchParams(window.location.search).get('tab') === 'users'
-                          ? 'bg-danger-100 text-danger-700 font-medium'
-                          : 'text-danger-600 hover:text-danger-700 hover:bg-danger-50'
-                      }`}
-                    >
-                      사용자 관리
-                    </Link>
-                  </>
+                  <Link
+                    to="/admin"
+                    className={`px-4 py-2 rounded-button transition ${
+                      isActive('/admin')
+                        ? 'bg-danger-100 text-danger-700 font-medium'
+                        : 'text-danger-600 hover:text-danger-700 hover:bg-danger-50'
+                    }`}
+                  >
+                    관리
+                  </Link>
                 ) : (
                   <Link
                     to="/my-products"
@@ -121,11 +111,19 @@ const Header = ({ user }) => {
                   }`}
                 >
                   <span>{user.nickname}</span>
-                  <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">
-                      {user.nickname?.[0]?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
+                  {user.avatar_url ? (
+                    <img
+                      src={getImageUrl(user.avatar_url)}
+                      alt={user.nickname}
+                      className="w-6 h-6 rounded-full object-cover border border-primary-200"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">
+                        {user.nickname?.[0]?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
                 </Link>
               </>
             ) : (
@@ -195,26 +193,15 @@ const Header = ({ user }) => {
                   </Link>
                 )}
                         {user.is_admin ? (
-                          <>
-                            <Link
-                              to="/admin?tab=products"
-                              onClick={() => setMobileMenuOpen(false)}
-                              className={`block px-4 py-2 rounded-button ${
-                                isActive('/admin', 'products') || (isActive('/admin') && !new URLSearchParams(location.search).get('tab')) ? 'bg-danger-100 text-danger-700' : 'text-danger-600'
-                              }`}
-                            >
-                              게시물 관리
-                            </Link>
-                            <Link
-                              to="/admin?tab=users"
-                              onClick={() => setMobileMenuOpen(false)}
-                              className={`block px-4 py-2 rounded-button ${
-                                isActive('/admin', 'users') ? 'bg-danger-100 text-danger-700' : 'text-danger-600'
-                              }`}
-                            >
-                              사용자 관리
-                            </Link>
-                          </>
+                          <Link
+                            to="/admin"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`block px-4 py-2 rounded-button ${
+                              isActive('/admin') ? 'bg-danger-100 text-danger-700' : 'text-danger-600'
+                            }`}
+                          >
+                            관리
+                          </Link>
                         ) : (
                           <Link
                             to="/my-products"

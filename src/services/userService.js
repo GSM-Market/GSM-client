@@ -26,6 +26,22 @@ const userService = {
     return response.data;
   },
 
+  // 프로필 사진 업로드
+  uploadAvatar: async (file) => {
+    console.log('📤 프로필 사진 업로드 요청:', { fileName: file.name, fileSize: file.size, fileType: file.type });
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    // FormData를 사용할 때는 Content-Type을 설정하지 않아야 함 (브라우저가 자동으로 설정)
+    const response = await api.post('/users/me/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('✅ 프로필 사진 업로드 성공:', response.data);
+    return response.data;
+  },
+
   // 회원 탈퇴
   deleteAccount: async (password) => {
     const response = await api.delete('/users/me', {

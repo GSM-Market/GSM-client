@@ -70,6 +70,19 @@ server {
         add_header Cache-Control "public";
     }
     
+    # favicon 및 vite.svg 요청 처리 (404 방지)
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+        return 204;
+    }
+    
+    location = /vite.svg {
+        access_log off;
+        log_not_found off;
+        return 204;
+    }
+
     # SPA 라우팅 - 모든 요청을 index.html로
     location / {
         try_files $uri $uri/ /index.html;
@@ -84,3 +97,4 @@ server {
     error_page 404 /index.html;
 }
 
+    

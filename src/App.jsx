@@ -80,7 +80,12 @@ function App() {
 
   return (
     <ToastProvider>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <div className="min-h-screen bg-primary-50">
           <Header user={user} />
           <main className="pb-8">
